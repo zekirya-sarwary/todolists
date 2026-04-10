@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow – Stay on Track</title>
+  <meta name="description" content="TaskFlow is a modern, responsive todo list app with drag-and-drop, priorities, dark mode, and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ─── Toast Container ─────────────────────────────────── -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ─── Confirmation Modal ──────────────────────────────── -->
+  <div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-box">
+      <div class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <h2 id="confirm-title">Delete Task?</h2>
+      <p id="confirm-msg">This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="confirm-cancel-btn" class="btn btn-ghost">Cancel</button>
+        <button id="confirm-ok-btn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Add / Edit Task Modal ────────────────────────────── -->
+  <div id="task-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+    <div class="modal-box task-modal-box">
+      <div class="modal-header">
+        <h2 id="task-modal-title">New Task</h2>
+        <button id="task-modal-close" class="icon-btn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="task-form" novalidate>
+        <input type="hidden" id="edit-task-id" />
+
+        <div class="form-group">
+          <label for="task-title">Title <span class="required">*</span></label>
+          <input id="task-title" type="text" placeholder="What needs to be done?" maxlength="120" autocomplete="off" required />
+          <span class="field-error" id="title-error"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" placeholder="Add more details…" rows="3" maxlength="500"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-due">Due Date</label>
+            <input id="task-due" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="low">🟢 Low</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="high">🔴 High</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="task-cancel-btn" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="task-submit-btn" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Add Task
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── App Wrapper ──────────────────────────────────────── -->
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo">
+          <i class="fa-solid fa-bolt-lightning"></i>
+          <span>TaskFlow</span>
+        </div>
+        <p class="subtitle" id="task-count-label">0 tasks remaining</p>
+      </div>
+      <div class="header-right">
+        <button id="dark-mode-btn" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button id="open-add-modal-btn" class="btn btn-primary" id="add-task-header-btn">
+          <i class="fa-solid fa-plus"></i> New Task
+        </button>
+      </div>
+    </header>
+
+    <!-- Controls Bar -->
+    <section class="controls-bar" aria-label="Task controls">
+      <div class="search-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input id="search-input" type="search" placeholder="Search tasks…" aria-label="Search tasks" />
+        <button id="clear-search-btn" class="icon-btn clear-search-btn" aria-label="Clear search" style="display:none;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="controls-right">
+        <div class="filter-tabs" role="tablist" aria-label="Filter tasks">
+          <button class="tab active" id="filter-all" role="tab" data-filter="all">All</button>
+          <button class="tab" id="filter-pending" role="tab" data-filter="pending">Pending</button>
+          <button class="tab" id="filter-completed" role="tab" data-filter="completed">Completed</button>
+        </div>
+
+        <div class="sort-wrap">
+          <label for="sort-select" class="sr-only">Sort by</label>
+          <select id="sort-select" aria-label="Sort tasks">
+            <option value="created-desc">Newest first</option>
+            <option value="created-asc">Oldest first</option>
+            <option value="due-asc">Due date ↑</option>
+            <option value="due-desc">Due date ↓</option>
+            <option value="priority-desc">Priority ↓</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Task List -->
+    <main class="task-list-container" id="task-list-container">
+      <ul id="task-list" class="task-list" aria-label="Task list"></ul>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state" hidden>
+        <div class="empty-illustration">
+          <i class="fa-regular fa-clipboard"></i>
+        </div>
+        <h3>No tasks here!</h3>
+        <p id="empty-msg">Add a task to get started.</p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <button id="clear-completed-btn" class="btn btn-ghost btn-sm">
+        <i class="fa-solid fa-broom"></i> Clear Completed
+      </button>
+      <span class="footer-info">Drag tasks to reorder</span>
+    </footer>
+
+  </div><!-- /.app-wrapper -->
+
+  <script src="app.js"></script>
+</body>
+</html>
